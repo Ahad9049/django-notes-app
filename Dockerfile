@@ -4,7 +4,7 @@ FROM python:3.10-slim AS builder
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-all-recomends gcc libpq-dev $$ rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends gcc libpq-dev $$ rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 
@@ -18,7 +18,7 @@ RUN adduser --disabled-password --gecos '' appuser
 
 WORKDIR /app
 
-ENV PYTHONUNBUFFERD=1 	PYTHONPATH="/install" PATH="/install/bin:$path"
+ENV PYTHONUNBUFFERED=1 	PYTHONPATH="/install" PATH="/install/bin:$PATH"
 
 COPY --from=builder /install /usr/local
 

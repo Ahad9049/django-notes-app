@@ -60,10 +60,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Deployment successful! Dev → port 3001 | Stage → port 3002"
+            echo "Deployment successful! Dev → port 8001 | Stage → port 8002"
         }
         failure {
-            echo "❌ Pipeline failed!"
+            echo "Pipeline failed!"
         }
     }
 }

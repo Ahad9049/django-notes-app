@@ -15,25 +15,21 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
-            steps {
-                sh """
-                docker build . -t $DOCKER_IMAGE:$IMAGE_TAG 
-                """
-            }
-        }
-
-        stage('Login to Docker Hub') {
+           stage('Login to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: DOCKERHUB_CREDENTIALS,
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh """
-                    echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
-                    """
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                 }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh "docker build --pull -t $DOCKER_IMAGE:$IMAGE_TAG ."
             }
         }
 

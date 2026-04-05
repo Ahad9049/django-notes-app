@@ -11,7 +11,7 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/Ahad9049/django-notes-app.git'
+                git branch: 'main', url: 'https://github.com/Ahad9049/django-notes-app.git'
             }
         }
 

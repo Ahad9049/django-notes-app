@@ -1,32 +1,73 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKERHUB_CREDENTIALS = "dockerhub"   // Jenkins credentials ID
+        DOCKER_IMAGE = "abdulahad9049/django-notes-app"
+        IMAGE_TAG = "${BUILD_NUMBER}"
+    }
+
     stages {
 
-        stage('Clone Repo') {
+        stage('Checkout Code') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/Ahad9049/django-notes-app.git'
+                git 'https://github.com/Ahad9049/django-notes-app.git'
             }
         }
 
-        stage('Create Virtual Environment and install dependencies') {
+        stage('Build Docker Image') {
             steps {
-                sh '''
-                    python3 -m venv django
-                    .django/bin/activate
-                    ./django/bin/pip install --upgrade pip
-                    ./django/bin/pip install -r requirements.txt
-                '''
+                sh """
+                docker build -t $DOCKER_IMAGE:$IMAGE_TAG .
+                """
             }
         }
-        stage('Run App Locally') {
+
+        stage('Login to Docker Hub') {
             steps {
-                sh '''
-                    ./django/bin/python manage.py makemigrations
-                    ./django/bin/python manage.py migrate
-                    ./django/bin/python manage.py runserver 0.0.0.0:8000
-                '''
+                withCredentials([usernamePassword(
+                    credentialsId: DOCKERHUB_CREDENTIALS,
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh """
+                    echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
+                    """
+                }
+            }
+        }
+
+        stage('Push Image to Docker Hub') {
+            steps {
+                sh """
+                docker push $DOCKER_IMAGE:$IMAGE_TAG
+                """
+            }
+        }
+
+        stage('Run Containers (Dev & Stage)') {
+            steps {
+                sh """
+                # Stop & remove old containers if exist
+                docker rm -f dev-container || true
+                docker rm -f stage-container || true
+
+                # Run DEV container (port 3001)
+                docker run -d -p 8001:8000 --name dev-container $DOCKER_IMAGE:$IMAGE_TAG
+
+                # Run STAGE container (port 3002)
+                docker run -d -p 8002:8000 --name stage-container $DOCKER_IMAGE:$IMAGE_TAG
+                """
             }
         }
     }
+
+    post {
+        success {
+            echo "✅ Deployment successful! Dev → port 3001 | Stage → port 3002"
+        }
+        failure {
+            echo "❌ Pipeline failed!"
+        }
+    }
+}
